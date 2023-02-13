@@ -1,16 +1,20 @@
 #include "widget.h"
-#include "./ui_widget.h"
+#include "ui_widget.h"
 
+#include <QDebug>
+#include <QFileDialog>
+#include <QGridLayout>
+#include <QMessageBox>
+#include <QRandomGenerator>
+#include <QRegularExpression>
+#include <QTextStream>
 #include <QWidget>
-#include <QtCharts/QChartGlobal>
+
+#include <QtCharts/QChart>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLegend>
-#include <QtWidgets/QGridLayout>
-#include <QLineSeries>
-#include <QRandomGenerator>
-#include <QFileDialog>
-#include <QRegularExpression>
-#include <QMessageBox>
+#include <QtCharts/QLineSeries>
+
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),

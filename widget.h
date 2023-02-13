@@ -9,16 +9,18 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
 QT_END_NAMESPACE
 
-QT_BEGIN_NAMESPACE
+QT_CHARTS_BEGIN_NAMESPACE
 class QChartView;
 class QChart;
-QT_END_NAMESPACE
+QT_CHARTS_END_NAMESPACE
+
 
 typedef QPair<QPointF, QString> Data;
 typedef QList<Data> DataList;
 typedef QList<DataList> DataTable;
 
 QT_USE_NAMESPACE
+QT_CHARTS_USE_NAMESPACE
 
 class Widget : public QWidget
 {
