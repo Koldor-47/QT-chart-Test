@@ -21,6 +21,8 @@ set(PROJECT_SOURCES
         widget.ui
 )
 
+add_compile_options(-Wall -Wextra -Werror)
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(Nicks_QtChart
         MANUAL_FINALIZATION

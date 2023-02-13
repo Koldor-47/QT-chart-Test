@@ -18,11 +18,11 @@
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
+      ui(new Ui::Widget),
       m_listCount(3),
       m_valueMax(10),
       m_valueCount(7),
-      m_dataTable(generateRandomData(m_listCount, m_valueMax, m_valueCount)),
-      ui(new Ui::Widget)
+      m_dataTable(generateRandomData(m_listCount, m_valueMax, m_valueCount))
 {
     ui->setupUi(this);
     this->resize(300, 500);

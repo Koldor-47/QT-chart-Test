@@ -40,13 +40,15 @@ private slots:
     void on_pushButton_3_clicked();
 
 private:
-    Ui::Widget *ui;
     DataTable generateRandomData(int listCount, int valueMax, int valueCount) const;
     QChart *createLineChart() const;
-    DataTable m_dataTable;
+
+    Ui::Widget *ui;
+
     int m_listCount;
     int m_valueMax;
     int m_valueCount;
+    DataTable m_dataTable;
     QList<QChartView *> m_charts;
     QString thefilename;
 };
