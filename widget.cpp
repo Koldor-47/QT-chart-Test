@@ -1,6 +1,7 @@
 #include "widget.h"
 #include "ui_widget.h"
 
+#include <QAction>
 #include <QDebug>
 #include <QFileDialog>
 #include <QGridLayout>
@@ -27,7 +28,14 @@ Widget::Widget(QWidget *parent)
     ui->setupUi(this);
     this->resize(300, 500);
 
-
+    auto action = new QAction{"Dummy Plot", this};
+    action->setShortcut(QKeySequence{Qt::CTRL + Qt::Key_D});
+    addAction(action);
+    connect(action, &QAction::triggered, this, [this]{
+        auto chartView = new QChartView(createLineChart());
+        ui->horizontalLayout->addWidget(chartView, 1);
+        m_charts << chartView;
+    });
 
 
     QString thefilename;
