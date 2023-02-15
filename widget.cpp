@@ -1,29 +1,41 @@
 #include "widget.h"
-#include "./ui_widget.h"
+#include "ui_widget.h"
 
+#include <QAction>
+#include <QDebug>
+#include <QFileDialog>
+#include <QGridLayout>
+#include <QMessageBox>
+#include <QRandomGenerator>
+#include <QRegularExpression>
+#include <QTextStream>
 #include <QWidget>
-#include <QtCharts/QChartGlobal>
+
+#include <QtCharts/QChart>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLegend>
-#include <QtWidgets/QGridLayout>
-#include <QLineSeries>
-#include <QRandomGenerator>
-#include <QFileDialog>
-#include <QRegularExpression>
-#include <QMessageBox>
+#include <QtCharts/QLineSeries>
+
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
+      ui(new Ui::Widget),
       m_listCount(3),
       m_valueMax(10),
       m_valueCount(7),
-      m_dataTable(generateRandomData(m_listCount, m_valueMax, m_valueCount)),
-      ui(new Ui::Widget)
+      m_dataTable(generateRandomData(m_listCount, m_valueMax, m_valueCount))
 {
     ui->setupUi(this);
     this->resize(300, 500);
 
-
+    auto action = new QAction{"Dummy Plot", this};
+    action->setShortcut(QKeySequence{Qt::CTRL + Qt::Key_D});
+    addAction(action);
+    connect(action, &QAction::triggered, this, [this]{
+        auto chartView = new QChartView(createLineChart());
+        ui->horizontalLayout->addWidget(chartView, 1);
+        m_charts << chartView;
+    });
 
 
     QString thefilename;
