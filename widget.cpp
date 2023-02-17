@@ -29,7 +29,7 @@ Widget::Widget(QWidget *parent)
     this->resize(300, 500);
 
     auto action = new QAction{"Dummy Plot", this};
-    action->setShortcut(QKeySequence{Qt::CTRL + Qt::Key_D});
+    action->setShortcut(QKeySequence{Qt::CTRL | Qt::Key_D});
     addAction(action);
     connect(action, &QAction::triggered, this, [this]{
         auto chartView = new QChartView(createLineChart());
@@ -38,7 +38,7 @@ Widget::Widget(QWidget *parent)
     });
 
 
-    QString thefilename;
+    //QString thefilename;
 
 
 }
@@ -108,12 +108,12 @@ QChart *Widget::createLineChart() const
 
 
 
-void Widget::on_pushButton_clicked()
+void Widget::on_openFile_clicked()
 {
 
     thefilename = QFileDialog::getOpenFileName(this, tr("Open SigLog"), "/home/koldor", tr("Siglog Files (*.SIL)"));
 
-    QRegularExpression looking("^[0-9][0-9] [A-Za-z_]*");
+    static QRegularExpression looking("^[0-9][0-9] [A-Za-z_]*");
 
     QFile silLogData(thefilename);
     ui->listWidget->clear();
@@ -157,6 +157,7 @@ QChart *Widget::createSigLogChart(QString filename) const
     if(!sigLog.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         qDebug() << "No File Found";
+        delete test_series;
         return chart;
     }
 
@@ -172,6 +173,7 @@ QChart *Widget::createSigLogChart(QString filename) const
             sensorValue = sensorItems[2].toDouble();
 
             test_series->append(sensorTime, sensorValue);
+            qDebug() << sensorTime << " : " << sensorValue;
 
         }
 
@@ -185,7 +187,7 @@ QChart *Widget::createSigLogChart(QString filename) const
 
 }
 
-void Widget::on_pushButton_2_clicked()
+void Widget::on_makeGraph_clicked()
 {
     QMessageBox testbox;
     QChartView *chartView;
@@ -215,10 +217,22 @@ void Widget::on_pushButton_2_clicked()
 }
 
 
-void Widget::on_pushButton_3_clicked()
+void Widget::on_clearGraph_clicked()
 {
     this->resize(800, 500);
+    QMessageBox itemsInLayout;
+    QString graphCount = QString::number(ui->horizontalLayout->count());
+
+    itemsInLayout.setText(graphCount);
+
+    itemsInLayout.exec();
+
+
+
+
 
 
 }
+
+
 

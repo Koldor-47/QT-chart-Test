@@ -9,10 +9,10 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
 QT_END_NAMESPACE
 
-QT_CHARTS_BEGIN_NAMESPACE
+QT_BEGIN_NAMESPACE
 class QChartView;
 class QChart;
-QT_CHARTS_END_NAMESPACE
+QT_END_NAMESPACE
 
 
 typedef QPair<QPointF, QString> Data;
@@ -20,7 +20,6 @@ typedef QList<Data> DataList;
 typedef QList<DataList> DataTable;
 
 QT_USE_NAMESPACE
-QT_CHARTS_USE_NAMESPACE
 
 class Widget : public QWidget
 {
@@ -33,11 +32,12 @@ public:
     QChart *createSigLogChart(QString filename) const;
 
 private slots:
-    void on_pushButton_clicked();
+    void on_openFile_clicked();
 
-    void on_pushButton_2_clicked();
+    void on_makeGraph_clicked();
 
-    void on_pushButton_3_clicked();
+    void on_clearGraph_clicked();
+
 
 private:
     DataTable generateRandomData(int listCount, int valueMax, int valueCount) const;

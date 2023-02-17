@@ -26,7 +26,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="openFile">
          <property name="text">
           <string>Open Signal Log</string>
          </property>
@@ -36,14 +36,14 @@
         <widget class="QListWidget" name="listWidget"/>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_2">
+        <widget class="QPushButton" name="makeGraph">
          <property name="text">
           <string>Graph It</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_3">
+        <widget class="QPushButton" name="clearGraph">
          <property name="text">
           <string>Clear Graph</string>
          </property>
