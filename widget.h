@@ -7,17 +7,9 @@
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
-QT_END_NAMESPACE
-
-QT_BEGIN_NAMESPACE
 class QChartView;
 class QChart;
 QT_END_NAMESPACE
-
-
-typedef QPair<QPointF, QString> Data;
-typedef QList<Data> DataList;
-typedef QList<DataList> DataTable;
 
 QT_USE_NAMESPACE
 
@@ -40,16 +32,8 @@ private slots:
 
 
 private:
-    DataTable generateRandomData(int listCount, int valueMax, int valueCount) const;
-    QChart *createLineChart() const;
-
     Ui::Widget *ui;
 
-    int m_listCount;
-    int m_valueMax;
-    int m_valueCount;
-    DataTable m_dataTable;
-    QList<QChartView *> m_charts;
     QString thefilename;
 };
 #endif // WIDGET_H

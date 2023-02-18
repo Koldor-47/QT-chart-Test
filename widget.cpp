@@ -10,6 +10,8 @@
 #include <QRegularExpression>
 #include <QTextStream>
 #include <QWidget>
+#include <QDateTimeAxis>
+#include <QValueAxis>
 
 #include <QtCharts/QChart>
 #include <QtCharts/QChartView>
@@ -19,11 +21,7 @@
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
-      ui(new Ui::Widget),
-      m_listCount(3),
-      m_valueMax(10),
-      m_valueCount(7),
-      m_dataTable(generateRandomData(m_listCount, m_valueMax, m_valueCount))
+      ui(new Ui::Widget)
 {
     ui->setupUi(this);
     this->resize(300, 500);
@@ -32,9 +30,8 @@ Widget::Widget(QWidget *parent)
     action->setShortcut(QKeySequence{Qt::CTRL | Qt::Key_D});
     addAction(action);
     connect(action, &QAction::triggered, this, [this]{
-        auto chartView = new QChartView(createLineChart());
+        auto chartView = new QChartView(createSigLogChart(thefilename));
         ui->horizontalLayout->addWidget(chartView, 1);
-        m_charts << chartView;
     });
 
 
@@ -47,66 +44,6 @@ Widget::~Widget()
 {
     delete ui;
 }
-
-DataTable Widget::generateRandomData(int listCount, int valueMax, int valueCount) const
-{
-    DataTable dataTable;
-
-    // generate random data
-    for (int i(0); i < listCount; i++) {
-        DataList dataList;
-        qreal yValue(0);
-        for (int j(0); j < valueCount; j++) {
-            yValue = yValue + QRandomGenerator::global()->bounded(valueMax / (qreal) valueCount);
-            QPointF value((j + QRandomGenerator::global()->generateDouble()) * ((qreal) m_valueMax / (qreal) valueCount),
-                          yValue);
-            QString label = "Slice " + QString::number(i) + ":" + QString::number(j);
-            dataList << Data(value, label);
-        }
-        dataTable << dataList;
-    }
-
-    return dataTable;
-}
-
-QChart *Widget::createLineChart() const
-{
-    QChart *chart = new QChart();
-    QLineSeries *test_series = new QLineSeries();
-
-/*
-    test_series->append(0, 6);
-    test_series->append(2, 5);
-    test_series->append(4, 10);
-    test_series->append(6, 6);
-    test_series->append(8, 5);
-    test_series->append(10, 10);
-    test_series->append(12, 6);
-    test_series->append(14, 5);
-    test_series->append(16, 10);
-*/
-    double x = 0.5;
-    int y = 0;
-
-    for (int i = 0; i < 5; i++)
-    {
-        test_series->append(x, y);
-        x = x + 2.7;
-        y = y + 3;
-
-    }
-
-    chart->addSeries(test_series);
-
-    chart->setTitle("Nick's Line Chart");
-    QString name("Series ");
-
-
-
-    return chart;
-}
-
-
 
 void Widget::on_openFile_clicked()
 {
@@ -147,7 +84,7 @@ QChart *Widget::createSigLogChart(QString filename) const
     QString lookingExpression = QString("^[0-9]*.[0-9]{3} %1 [0-9]*.[0-9]*").arg(sensorID);
     QRegularExpressionMatch match;
     QStringList sensorItems;
-    qreal sensorTime;
+    QTime sensorTime;
     qreal sensorValue;
 
     QRegularExpression lookingSensorValue(lookingExpression);
@@ -169,11 +106,11 @@ QChart *Widget::createSigLogChart(QString filename) const
         {
             sensorItems = sensorLine.split(" ");
 
-            sensorTime = sensorItems[0].toDouble();
+            sensorTime = QTime::fromString(sensorItems[0], "HHmmss.zzz");
             sensorValue = sensorItems[2].toDouble();
 
-            test_series->append(sensorTime, sensorValue);
-            qDebug() << sensorTime << " : " << sensorValue;
+            test_series->append(sensorTime.msecsSinceStartOfDay(), sensorValue);
+            //qDebug() << sensorTime << " : " << sensorValue;
 
         }
 
@@ -181,7 +118,20 @@ QChart *Widget::createSigLogChart(QString filename) const
 
     chart->addSeries(test_series);
     chart->setTitle("Line Graph of " + ui->listWidget->currentItem()->text());
-    QString name("Series ");
+
+    QDateTimeAxis* axisX = new QDateTimeAxis;
+    axisX->setTickCount(30);
+    axisX->setFormat("HH:mm:ss");
+    axisX->setTitleText("Time");
+    chart->addAxis(axisX, Qt::AlignBottom);
+    test_series->attachAxis(axisX);
+
+    QValueAxis* axisY = new QValueAxis;
+    axisY->setLabelFormat("%i");
+    axisY->setTitleText("data");
+    axisY->setTickCount(10);
+    chart->addAxis(axisY, Qt::AlignLeft);
+    test_series->attachAxis(axisY);
 
     return chart;
 
@@ -206,31 +156,32 @@ void Widget::on_makeGraph_clicked()
         testbox.setText(ui->listWidget->currentItem()->text());
         chartView = new QChartView(createSigLogChart(thefilename));
         ui->horizontalLayout->addWidget(chartView, 1);
-        m_charts << chartView;
     }
-
-
-
-    testbox.exec();
-
-
 }
 
 
 void Widget::on_clearGraph_clicked()
 {
-    this->resize(800, 500);
+
     QMessageBox itemsInLayout;
-    QString graphCount = QString::number(ui->horizontalLayout->count());
+    QLayoutItem* item = ui->horizontalLayout->itemAt(1);
+    QWidget* graphWidget = nullptr;
 
-    itemsInLayout.setText(graphCount);
-
-    itemsInLayout.exec();
-
-
-
+    if (ui->horizontalLayout->count() > 1){
+        graphWidget = item->widget();
+    }
 
 
+    if (!graphWidget && ui->horizontalLayout->count() <= 1){
+        itemsInLayout.setText("No More Graphs!!");
+        itemsInLayout.exec();
+    } else if (graphWidget && ui->horizontalLayout->count() == 2) {
+        delete graphWidget;
+        this->resize(300, 500);
+    } else if(graphWidget && ui->horizontalLayout->count() > 2) {
+        delete graphWidget;
+        this->resize(1200, 500);
+    }
 
 }
 
