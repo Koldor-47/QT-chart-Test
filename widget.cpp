@@ -71,6 +71,7 @@ void Widget::on_openFile_clicked()
 
     }
 
+    this->setWindowTitle(thefilename);
     silLogData.close();
 
 }
@@ -86,9 +87,9 @@ QChart *Widget::createSigLogChart(QString filename) const
     QStringList sensorItems;
     QTime sensorTime;
     qreal sensorValue;
-
+    QFileInfo *fileDetails = new QFileInfo(filename);
+    QDateTime logStartTime = fileDetails->birthTime();
     QRegularExpression lookingSensorValue(lookingExpression);
-
     QFile sigLog(filename);
 
     if(!sigLog.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -99,6 +100,7 @@ QChart *Widget::createSigLogChart(QString filename) const
     }
 
     QTextStream stream(&sigLog);
+
     while (!stream.atEnd()){
         sensorLine = stream.readLine();
         match = lookingSensorValue.match(sensorLine);
@@ -107,14 +109,17 @@ QChart *Widget::createSigLogChart(QString filename) const
             sensorItems = sensorLine.split(" ");
 
             sensorTime = QTime::fromString(sensorItems[0], "HHmmss.zzz");
+            QDateTime sensorTimeComplete = *new QDateTime(logStartTime.date(), sensorTime);
             sensorValue = sensorItems[2].toDouble();
 
-            test_series->append(sensorTime.msecsSinceStartOfDay(), sensorValue);
+            test_series->append(sensorTimeComplete.toMSecsSinceEpoch(), sensorValue);
             //qDebug() << sensorTime << " : " << sensorValue;
 
         }
 
     }
+
+    sigLog.close();
 
     chart->addSeries(test_series);
     chart->setTitle("Line Graph of " + ui->listWidget->currentItem()->text());
@@ -127,12 +132,13 @@ QChart *Widget::createSigLogChart(QString filename) const
     test_series->attachAxis(axisX);
 
     QValueAxis* axisY = new QValueAxis;
-    axisY->setLabelFormat("%i");
+    axisY->setLabelFormat("%4.3f");
     axisY->setTitleText("data");
     axisY->setTickCount(10);
     chart->addAxis(axisY, Qt::AlignLeft);
     test_series->attachAxis(axisY);
 
+    delete fileDetails;
     return chart;
 
 }
