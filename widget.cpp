@@ -1,5 +1,6 @@
 #include "widget.h"
 #include "ui_widget.h"
+#include "koldorchartview.h"
 
 #include <QAction>
 #include <QDebug>
@@ -17,6 +18,7 @@
 #include <QtCharts/QChartView>
 #include <QtCharts/QLegend>
 #include <QtCharts/QLineSeries>
+#include <QtCharts/QSplineSeries>
 
 
 Widget::Widget(QWidget *parent)
@@ -79,7 +81,7 @@ void Widget::on_openFile_clicked()
 QChart *Widget::createSigLogChart(QString filename) const
 {
     QChart *chart = new QChart();
-    QLineSeries *test_series = new QLineSeries();
+    QSplineSeries *test_series = new QSplineSeries();
     QString sensorID = ui->listWidget->currentItem()->text().split(" ").first();
     QString sensorLine;
     QString lookingExpression = QString("^[0-9]*.[0-9]{3} %1 [0-9]*.[0-9]*").arg(sensorID);
@@ -146,7 +148,7 @@ QChart *Widget::createSigLogChart(QString filename) const
 void Widget::on_makeGraph_clicked()
 {
     QMessageBox testbox;
-    QChartView *chartView;
+    koldorChartView *chartView;
 
 
     if (ui->listWidget->count() == 0)
@@ -160,7 +162,7 @@ void Widget::on_makeGraph_clicked()
     {
         this->resize(800, 500);
         testbox.setText(ui->listWidget->currentItem()->text());
-        chartView = new QChartView(createSigLogChart(thefilename));
+        chartView = new koldorChartView(createSigLogChart(thefilename));
         ui->horizontalLayout->addWidget(chartView, 1);
     }
 }
