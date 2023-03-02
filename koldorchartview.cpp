@@ -1,4 +1,9 @@
+#include <QApplication>
+
 #include "koldorchartview.h"
+
+
+#include <iostream>
 
 koldorChartView::koldorChartView(QChart *chart, QWidget *parent) :
     QChartView(chart, parent),
@@ -19,14 +24,29 @@ bool koldorChartView::viewportEvent(QEvent *event) {
 
 void koldorChartView::mousePressEvent(QMouseEvent *event)
 {
-    if(m_isTouching)
+    if (event->button() == Qt::MiddleButton){
+        QApplication::setOverrideCursor(QCursor(Qt::SizeAllCursor));
+        m_lastMousePos = event->pos();
+        event->accept();
+    }
+    if (m_isTouching) {
         return;
+    }
     QChartView::mousePressEvent(event);
 };
 
 void koldorChartView::mouseMoveEvent(QMouseEvent *event)
 {
-    if (m_isTouching)
+    if (event->buttons() & Qt::MiddleButton){
+        auto dPos = event->pos() - m_lastMousePos;
+        chart()->scroll(-dPos.x(), dPos.y());
+
+        m_lastMousePos = event->pos();
+
+        QApplication::restoreOverrideCursor();
+    }
+
+    if (m_isTouching )
         return;
     QChartView::mouseMoveEvent(event);
 };

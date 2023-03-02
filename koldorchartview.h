@@ -3,12 +3,13 @@
 
 #include <QtCharts/QChartView>
 #include <QtWidgets/QRubberBand>
-
+#include <QDebug>
 
 QT_USE_NAMESPACE
 
 class koldorChartView : public QChartView
 {
+    Q_OBJECT
 public:
     koldorChartView(QChart *chart, QWidget *parent = 0);
 
@@ -21,6 +22,7 @@ protected:
 
 private:
         bool m_isTouching;
+        QPointF m_lastMousePos;
 signals:
 
 };
