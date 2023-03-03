@@ -78,27 +78,29 @@ void Widget::on_openFile_clicked()
 
 }
 
-QChart *Widget::createSigLogChart(QString filename) const
+QLineSeries *Widget::makeDataSeries(QString &fileName) const
 {
-    QChart *chart = new QChart();
-    QSplineSeries *test_series = new QSplineSeries();
+
+    QFile sigLog(fileName);
+    QFileInfo *fileDetails = new QFileInfo(fileName);
+    QLineSeries *test_series = new QLineSeries();
+
     QString sensorID = ui->listWidget->currentItem()->text().split(" ").first();
-    QString sensorLine;
-    QString lookingExpression = QString("^[0-9]*.[0-9]{3} %1 [0-9]*.[0-9]*").arg(sensorID);
-    QRegularExpressionMatch match;
-    QStringList sensorItems;
     QTime sensorTime;
     qreal sensorValue;
-    QFileInfo *fileDetails = new QFileInfo(filename);
+    qreal last_sensorValue = 0;
+    QString sensorLine;
+    QStringList sensorItems;
     QDateTime logStartTime = fileDetails->birthTime();
+
+    QString lookingExpression = QString("^[0-9]*.[0-9]{3} %1 [0-9]*.[0-9]*").arg(sensorID);
     QRegularExpression lookingSensorValue(lookingExpression);
-    QFile sigLog(filename);
+    QRegularExpressionMatch match;
+
 
     if(!sigLog.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         qDebug() << "No File Found";
-        delete test_series;
-        return chart;
     }
 
     QTextStream stream(&sigLog);
@@ -114,14 +116,31 @@ QChart *Widget::createSigLogChart(QString filename) const
             QDateTime sensorTimeComplete = *new QDateTime(logStartTime.date(), sensorTime);
             sensorValue = sensorItems[2].toDouble();
 
+
+            if (ui->StepGraphCheckBox->isChecked()){
+                test_series->append(sensorTimeComplete.toMSecsSinceEpoch(), last_sensorValue);
+                //qDebug() << "Hello " << last_sensorValue << " : " << sensorValue;
+            }
             test_series->append(sensorTimeComplete.toMSecsSinceEpoch(), sensorValue);
             //qDebug() << sensorTime << " : " << sensorValue;
+            last_sensorValue = sensorValue;
 
         }
 
     }
 
+
+    delete fileDetails;
     sigLog.close();
+
+    return test_series;
+}
+
+QChart *Widget::createSigLogChart(QString filename) const
+{
+    QChart *chart = new QChart();
+    QLineSeries *test_series = makeDataSeries(filename);
+
 
     chart->addSeries(test_series);
     chart->setTitle("Line Graph of " + ui->listWidget->currentItem()->text());
@@ -140,10 +159,12 @@ QChart *Widget::createSigLogChart(QString filename) const
     chart->addAxis(axisY, Qt::AlignLeft);
     test_series->attachAxis(axisY);
 
-    delete fileDetails;
+
     return chart;
 
 }
+
+
 
 void Widget::on_makeGraph_clicked()
 {

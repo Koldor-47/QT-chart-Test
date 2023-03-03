@@ -4,6 +4,7 @@
 #include <QtWidgets/QWidget>
 
 #include <QtCharts/QChartGlobal>
+#include <QtCharts/QLineSeries>
 
 
 QT_BEGIN_NAMESPACE
@@ -23,6 +24,7 @@ public:
     ~Widget();
 
     QChart *createSigLogChart(QString filename) const;
+    QLineSeries *makeDataSeries(QString &fileName) const;
 
 private slots:
     void on_openFile_clicked();
