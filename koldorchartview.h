@@ -1,9 +1,10 @@
 #ifndef KOLDORCHARTVIEW_H
 #define KOLDORCHARTVIEW_H
 
-#include <QtCharts/QChartView>
 #include <QtWidgets/QRubberBand>
 #include <QDebug>
+
+#include <QtCharts/QChartView>
 
 QT_USE_NAMESPACE
 

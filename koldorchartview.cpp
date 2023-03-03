@@ -1,9 +1,6 @@
-#include <QApplication>
-
 #include "koldorchartview.h"
 
-
-#include <iostream>
+#include <QApplication>
 
 koldorChartView::koldorChartView(QChart *chart, QWidget *parent) :
     QChartView(chart, parent),
