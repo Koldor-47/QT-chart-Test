@@ -2,6 +2,7 @@
 #define WIDGET_H
 
 #include <QtWidgets/QWidget>
+
 #include <QtCharts/QChartGlobal>
 
 

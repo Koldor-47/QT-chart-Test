@@ -43,9 +43,23 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="text">
+          <string>Add Signal to Graph</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="clearGraph">
          <property name="text">
           <string>Clear Graph</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="StepGraphCheckBox">
+         <property name="text">
+          <string>Digital Graph</string>
          </property>
         </widget>
        </item>
