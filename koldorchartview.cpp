@@ -36,6 +36,7 @@ void koldorChartView::mouseMoveEvent(QMouseEvent *event)
 {
     if (event->buttons() & Qt::MiddleButton){
         auto dPos = event->pos() - m_lastMousePos;
+
         chart()->scroll(-dPos.x(), dPos.y());
 
         m_lastMousePos = event->pos();

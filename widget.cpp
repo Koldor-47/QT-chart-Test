@@ -28,6 +28,8 @@ Widget::Widget(QWidget *parent)
     ui->setupUi(this);
     this->resize(300, 500);
 
+    ui->listWidget->setSelectionMode(QAbstractItemView::MultiSelection);
+
     auto action = new QAction{"Dummy Plot", this};
     action->setShortcut(QKeySequence{Qt::CTRL | Qt::Key_D});
     addAction(action);
@@ -85,6 +87,7 @@ QLineSeries *Widget::makeDataSeries(QString &fileName) const
     QFileInfo *fileDetails = new QFileInfo(fileName);
     QLineSeries *test_series = new QLineSeries();
 
+
     QString sensorID = ui->listWidget->currentItem()->text().split(" ").first();
     QTime sensorTime;
     qreal sensorValue;
@@ -96,6 +99,8 @@ QLineSeries *Widget::makeDataSeries(QString &fileName) const
     QString lookingExpression = QString("^[0-9]*.[0-9]{3} %1 [0-9]*.[0-9]*").arg(sensorID);
     QRegularExpression lookingSensorValue(lookingExpression);
     QRegularExpressionMatch match;
+
+    test_series->setPointsVisible(true);
 
 
     if(!sigLog.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -136,29 +141,107 @@ QLineSeries *Widget::makeDataSeries(QString &fileName) const
     return test_series;
 }
 
+void Widget::getNicksData(QString &fileName, QList<QLineSeries *> &datalines) const
+{
+    QList<QLineSeries *> nicksData;
+    QList<QString> fileData;
+    QList<QListWidgetItem *> signalNames = ui->listWidget->selectedItems();
+    QString logStart = fileName.split("_")[1].split(".")[0];
+    QDateTime logStartTime = QDateTime::fromString(logStart, "HHmmss");
+
+
+
+    QFile data(fileName);
+
+    if (!data.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "No File Found";
+    }
+
+    QTextStream dataStream(&data);
+
+    while(!dataStream.atEnd()) {
+        QString line = dataStream.readLine();
+        fileData.append(line);
+    }
+
+    data.close();
+
+    //the data file has been read and saved in a Qlist
+
+    for (auto signal : signalNames){
+        QLineSeries *dataLine = new QLineSeries;
+        QList<QString> sensorItems = signal->text().split(" ");
+        QString sensorID = sensorItems[0];
+        QString lookingExpression = QString("^[0-9]*.[0-9]{3} %1 [0-9]*.[0-9]*").arg(sensorID);
+        QRegularExpression lookingSensorValue(lookingExpression);
+        QRegularExpressionMatch match;
+        qreal lastSensorValue = 0;
+
+        for (QString line : fileData){
+            if (lookingSensorValue.match(line).hasMatch()){
+                QList<QString> sensorLineData = line.split(" ");
+                QDateTime time = QDateTime::fromString(sensorLineData[0], "HHmmss.zzz");
+                qreal value = sensorLineData[2].toDouble();
+
+                if (ui->StepGraphCheckBox->isChecked()){
+                    dataLine->append(time.toMSecsSinceEpoch(), lastSensorValue);
+                }
+
+                dataLine->append(time.toMSecsSinceEpoch(), value);
+                lastSensorValue = value;
+            }
+
+        }
+
+        datalines.append(dataLine);
+    }
+
+}
+
+
 QChart *Widget::createSigLogChart(QString filename) const
 {
     QChart *chart = new QChart();
-    QLineSeries *test_series = makeDataSeries(filename);
-
-
-    chart->addSeries(test_series);
-    chart->setTitle("Line Graph of " + ui->listWidget->currentItem()->text());
+    //QLineSeries *test_series = makeDataSeries(filename);
+    QList<QLineSeries *> test;
+    getNicksData(filename, test);
 
     QDateTimeAxis* axisX = new QDateTimeAxis;
     axisX->setTickCount(30);
     axisX->setFormat("HH:mm:ss");
     axisX->setTitleText("Time");
-    chart->addAxis(axisX, Qt::AlignBottom);
-    test_series->attachAxis(axisX);
 
-    QValueAxis* axisY = new QValueAxis;
-    axisY->setLabelFormat("%4.3f");
-    axisY->setTitleText("data");
-    axisY->setTickCount(10);
-    chart->addAxis(axisY, Qt::AlignLeft);
-    test_series->attachAxis(axisY);
 
+
+
+    qDebug() << "hello " << test.count();
+    //chart->addSeries(test_series);
+    for (int i = 0; i < test.count(); i++){
+        qDebug() << i << test[i];
+        QLineSeries *theLine = test[i];
+        chart->addSeries(theLine);
+
+        QValueAxis* axisY = new QValueAxis;
+        if (ui->StepGraphCheckBox->isChecked()){
+            axisY->setLabelFormat("%d");
+            axisY->setTickCount(10);
+
+        } else {
+            axisY->setLabelFormat("%4.3f");
+            axisY->setTickCount(10);
+        }
+        axisY->setTitleText("data");
+
+        chart->addAxis(axisX, Qt::AlignBottom);
+        chart->addAxis(axisY, Qt::AlignLeft);
+
+        theLine->attachAxis(axisX);
+        theLine->attachAxis(axisY);
+
+
+    }
+
+    chart->setTitle("Line Graph of Things");
 
     return chart;
 
@@ -184,7 +267,8 @@ void Widget::on_makeGraph_clicked()
         this->resize(800, 500);
         testbox.setText(ui->listWidget->currentItem()->text());
         chartView = new koldorChartView(createSigLogChart(thefilename));
-        ui->horizontalLayout->addWidget(chartView, 1);
+        //ui->horizontalLayout->addWidget(chartView, 1);
+        ui->GraphArea->addWidget(chartView, 1);
     }
 }
 
@@ -193,23 +277,23 @@ void Widget::on_clearGraph_clicked()
 {
 
     QMessageBox itemsInLayout;
-    QLayoutItem* item = ui->horizontalLayout->itemAt(1);
+    QLayoutItem* item = ui->GraphArea->itemAt(0);
     QWidget* graphWidget = nullptr;
 
-    if (ui->horizontalLayout->count() > 1){
+    if (ui->GraphArea->count() >= 1){
         graphWidget = item->widget();
     }
 
 
-    if (!graphWidget && ui->horizontalLayout->count() <= 1){
+    if (!graphWidget && ui->GraphArea->count() == 0){
         itemsInLayout.setText("No More Graphs!!");
         itemsInLayout.exec();
-    } else if (graphWidget && ui->horizontalLayout->count() == 2) {
+    } else if (graphWidget && ui->GraphArea->count() <= 1) {
         delete graphWidget;
         this->resize(300, 500);
-    } else if(graphWidget && ui->horizontalLayout->count() > 2) {
+    } else if(graphWidget && ui->GraphArea->count() >= 2) {
         delete graphWidget;
-        this->resize(1200, 500);
+        //this->resize(1200, 500);
     }
 
 }
