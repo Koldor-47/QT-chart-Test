@@ -13,14 +13,29 @@
   <property name="windowTitle">
    <string>Widget</string>
   </property>
+  <property name="windowIcon">
+   <iconset theme="drive-harddisk"/>
+  </property>
   <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <property name="spacing">
+    <number>1</number>
+   </property>
+   <property name="rightMargin">
+    <number>9</number>
+   </property>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
      <property name="spacing">
-      <number>0</number>
+      <number>6</number>
      </property>
      <property name="sizeConstraint">
-      <enum>QLayout::SetFixedSize</enum>
+      <enum>QLayout::SetNoConstraint</enum>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
      </property>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -28,15 +43,18 @@
         <number>0</number>
        </property>
        <property name="sizeConstraint">
-        <enum>QLayout::SetMaximumSize</enum>
+        <enum>QLayout::SetFixedSize</enum>
        </property>
        <property name="leftMargin">
         <number>10</number>
        </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>Nick's Test Graph</string>
+          <string>Nick's Signal Log Reader</string>
          </property>
         </widget>
        </item>
@@ -54,13 +72,6 @@
         <widget class="QPushButton" name="makeGraph">
          <property name="text">
           <string>Graph It</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pushButton">
-         <property name="text">
-          <string>Add Signal to Graph</string>
          </property>
         </widget>
        </item>
@@ -94,9 +105,12 @@
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="GraphArea">
+      <layout class="QVBoxLayout" name="GraphArea" stretch="">
        <property name="spacing">
         <number>0</number>
+       </property>
+       <property name="sizeConstraint">
+        <enum>QLayout::SetNoConstraint</enum>
        </property>
       </layout>
      </item>

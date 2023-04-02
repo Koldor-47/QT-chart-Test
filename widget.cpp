@@ -80,66 +80,6 @@ void Widget::on_openFile_clicked()
 
 }
 
-QLineSeries *Widget::makeDataSeries(QString &fileName) const
-{
-
-    QFile sigLog(fileName);
-    QFileInfo *fileDetails = new QFileInfo(fileName);
-    QLineSeries *test_series = new QLineSeries();
-
-
-    QString sensorID = ui->listWidget->currentItem()->text().split(" ").first();
-    QTime sensorTime;
-    qreal sensorValue;
-    qreal last_sensorValue = 0;
-    QString sensorLine;
-    QStringList sensorItems;
-    QDateTime logStartTime = fileDetails->birthTime();
-
-    QString lookingExpression = QString("^[0-9]*.[0-9]{3} %1 [0-9]*.[0-9]*").arg(sensorID);
-    QRegularExpression lookingSensorValue(lookingExpression);
-    QRegularExpressionMatch match;
-
-    test_series->setPointsVisible(true);
-
-
-    if(!sigLog.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        qDebug() << "No File Found";
-    }
-
-    QTextStream stream(&sigLog);
-
-    while (!stream.atEnd()){
-        sensorLine = stream.readLine();
-        match = lookingSensorValue.match(sensorLine);
-        if (match.hasMatch())
-        {
-            sensorItems = sensorLine.split(" ");
-
-            sensorTime = QTime::fromString(sensorItems[0], "HHmmss.zzz");
-            QDateTime sensorTimeComplete = *new QDateTime(logStartTime.date(), sensorTime);
-            sensorValue = sensorItems[2].toDouble();
-
-
-            if (ui->StepGraphCheckBox->isChecked()){
-                test_series->append(sensorTimeComplete.toMSecsSinceEpoch(), last_sensorValue);
-                //qDebug() << "Hello " << last_sensorValue << " : " << sensorValue;
-            }
-            test_series->append(sensorTimeComplete.toMSecsSinceEpoch(), sensorValue);
-            //qDebug() << sensorTime << " : " << sensorValue;
-            last_sensorValue = sensorValue;
-
-        }
-
-    }
-
-
-    delete fileDetails;
-    sigLog.close();
-
-    return test_series;
-}
 
 void Widget::getNicksData(QString &fileName, QList<QLineSeries *> &datalines) const
 {
@@ -218,8 +158,13 @@ QChart *Widget::createSigLogChart(QString filename) const
     //chart->addSeries(test_series);
     for (int i = 0; i < test.count(); i++){
         qDebug() << i << test[i];
+        QString signal_name = ui->listWidget->selectedItems()[i]->text().split(" ")[1];
         QLineSeries *theLine = test[i];
+        theLine->setName(signal_name);
         chart->addSeries(theLine);
+
+
+
 
         QValueAxis* axisY = new QValueAxis;
         if (ui->StepGraphCheckBox->isChecked()){
@@ -290,7 +235,7 @@ void Widget::on_clearGraph_clicked()
         itemsInLayout.exec();
     } else if (graphWidget && ui->GraphArea->count() <= 1) {
         delete graphWidget;
-        this->resize(300, 500);
+        this->resize(10, 500);
     } else if(graphWidget && ui->GraphArea->count() >= 2) {
         delete graphWidget;
         //this->resize(1200, 500);

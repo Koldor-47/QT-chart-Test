@@ -24,7 +24,6 @@ public:
     ~Widget();
 
     QChart *createSigLogChart(QString filename) const;
-    QLineSeries *makeDataSeries(QString &fileName) const;
     void getNicksData(QString &fileName,  QList<QLineSeries *> &datalines)const;
 
 private slots:
