@@ -2,6 +2,8 @@
 #define WIDGET_H
 
 #include <QtWidgets/QWidget>
+#include <QMap>
+#include <QLineSeries>
 
 #include <QtCharts/QChartGlobal>
 #include <QtCharts/QLineSeries>
@@ -23,8 +25,8 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 
-    QChart *createSigLogChart(QString filename) const;
-    void getNicksData(QString &fileName,  QList<QLineSeries *> &datalines)const;
+    QChart *createSigLogChart(QString &filename) const;
+    QMap<QString, QLineSeries *> getNicksData(QString &fileName)const;
 
 private slots:
     void on_openFile_clicked();
@@ -36,6 +38,8 @@ private slots:
 
 private:
     Ui::Widget *ui;
+
+    QMap<QString, QLineSeries *> sigData;
 
     QString thefilename;
 };

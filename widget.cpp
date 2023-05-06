@@ -13,6 +13,8 @@
 #include <QWidget>
 #include <QDateTimeAxis>
 #include <QValueAxis>
+#include <QStringView>
+#include <QMap>
 
 #include <QtCharts/QChart>
 #include <QtCharts/QChartView>
@@ -37,7 +39,6 @@ Widget::Widget(QWidget *parent)
         auto chartView = new QChartView(createSigLogChart(thefilename));
         ui->horizontalLayout->addWidget(chartView, 1);
     });
-
 
     //QString thefilename;
 
@@ -78,20 +79,27 @@ void Widget::on_openFile_clicked()
     this->setWindowTitle(thefilename);
     silLogData.close();
 
+    sigData = getNicksData(thefilename);
+
 }
 
 
-void Widget::getNicksData(QString &fileName, QList<QLineSeries *> &datalines) const
+QMap<QString, QLineSeries *> Widget::getNicksData(QString &fileName) const
 {
-    QList<QLineSeries *> nicksData;
-    QList<QString> fileData;
-    QList<QListWidgetItem *> signalNames = ui->listWidget->selectedItems();
-    QString logStart = fileName.split("_")[1].split(".")[0];
-    QDateTime logStartTime = QDateTime::fromString(logStart, "HHmmss");
-
-
-
+    /*Read Each line
+     *
+     * Work out if the sensor is one selected
+     *
+     * if not in map add a new QlineSeries
+     *
+     * or Append data to existing QlineSeries in Qmap
+     *
+     *  if Step graph check add and Extra data point in
+     */
+    bool dataStart = false;
     QFile data(fileName);
+    QString line = NULL;
+    QMap<QString, QLineSeries *> wantedData;
 
     if (!data.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "No File Found";
@@ -100,71 +108,64 @@ void Widget::getNicksData(QString &fileName, QList<QLineSeries *> &datalines) co
     QTextStream dataStream(&data);
 
     while(!dataStream.atEnd()) {
-        QString line = dataStream.readLine();
-        fileData.append(line);
+        line = dataStream.readLine();
+
+        //If have found start of data pass
+
+        if (!dataStart){
+            if (line == "HHMMSS.MS  ID VALUE"){
+                dataStart = true;
+            }
+            continue;
+        }
+
+        if (line.length() < 14) {
+            continue;
+        }
+
+        QList<QString> sensorLineData = line.split(" ");
+        QString sensor_id  = sensorLineData[1];
+        qreal value = sensorLineData[2].toDouble();
+        QDateTime time = QDateTime::fromString(sensorLineData[0], "HHmmss.zzz");
+
+
+        if (!wantedData.contains(sensor_id)) {
+            QLineSeries *data = new QLineSeries();
+
+            data->append(time.toMSecsSinceEpoch(), value);
+            wantedData.insert(sensor_id, data);
+        } else {
+            wantedData[sensor_id]->append(time.toMSecsSinceEpoch(), value);
+
+        }
     }
 
     data.close();
 
     //the data file has been read and saved in a Qlist
-
-    for (auto signal : signalNames){
-        QLineSeries *dataLine = new QLineSeries;
-        QList<QString> sensorItems = signal->text().split(" ");
-        QString sensorID = sensorItems[0];
-        QString lookingExpression = QString("^[0-9]*.[0-9]{3} %1 [0-9]*.[0-9]*").arg(sensorID);
-        QRegularExpression lookingSensorValue(lookingExpression);
-        QRegularExpressionMatch match;
-        qreal lastSensorValue = 0;
-
-        for (QString line : fileData){
-            if (lookingSensorValue.match(line).hasMatch()){
-                QList<QString> sensorLineData = line.split(" ");
-                QDateTime time = QDateTime::fromString(sensorLineData[0], "HHmmss.zzz");
-                qreal value = sensorLineData[2].toDouble();
-
-                if (ui->StepGraphCheckBox->isChecked()){
-                    dataLine->append(time.toMSecsSinceEpoch(), lastSensorValue);
-                }
-
-                dataLine->append(time.toMSecsSinceEpoch(), value);
-                lastSensorValue = value;
-            }
-
-        }
-
-        datalines.append(dataLine);
-    }
+    return wantedData;
 
 }
 
 
-QChart *Widget::createSigLogChart(QString filename) const
+QChart *Widget::createSigLogChart(QString &filename) const
 {
     QChart *chart = new QChart();
-    //QLineSeries *test_series = makeDataSeries(filename);
-    QList<QLineSeries *> test;
-    getNicksData(filename, test);
+    //QMap<QString, QLineSeries *> test = getNicksData(filename);
+
+    qDebug() << filename;
 
     QDateTimeAxis* axisX = new QDateTimeAxis;
     axisX->setTickCount(30);
     axisX->setFormat("HH:mm:ss");
     axisX->setTitleText("Time");
+    qDebug() << "differnet Data Sensors " << sigData.count();
 
+    for (QListWidgetItem* sensor : ui->listWidget->selectedItems()) {
+        QString id = sensor->text().split(" ")[0];
 
-
-
-    qDebug() << "hello " << test.count();
-    //chart->addSeries(test_series);
-    for (int i = 0; i < test.count(); i++){
-        qDebug() << i << test[i];
-        QString signal_name = ui->listWidget->selectedItems()[i]->text().split(" ")[1];
-        QLineSeries *theLine = test[i];
-        theLine->setName(signal_name);
-        chart->addSeries(theLine);
-
-
-
+        sigData[id]->setName(sensor->text());
+        chart->addSeries(sigData[id]);
 
         QValueAxis* axisY = new QValueAxis;
         if (ui->StepGraphCheckBox->isChecked()){
@@ -180,13 +181,11 @@ QChart *Widget::createSigLogChart(QString filename) const
         chart->addAxis(axisX, Qt::AlignBottom);
         chart->addAxis(axisY, Qt::AlignLeft);
 
-        theLine->attachAxis(axisX);
-        theLine->attachAxis(axisY);
-
-
+        sigData[id]->attachAxis(axisX);
+        sigData[id]->attachAxis(axisY);
     }
 
-    chart->setTitle("Line Graph of Things");
+    chart->setTitle("Graph of siglog");
 
     return chart;
 
