@@ -1,6 +1,7 @@
-#include "widget.h"
+﻿#include "widget.h"
 #include "ui_widget.h"
-#include "koldorchartview.h"
+#include "lib/qcustomplot.h"
+
 
 #include <QAction>
 #include <QDebug>
@@ -16,11 +17,6 @@
 #include <QStringView>
 #include <QMap>
 
-#include <QtCharts/QChart>
-#include <QtCharts/QChartView>
-#include <QtCharts/QLegend>
-#include <QtCharts/QLineSeries>
-#include <QtCharts/QSplineSeries>
 
 
 Widget::Widget(QWidget *parent)
@@ -32,15 +28,6 @@ Widget::Widget(QWidget *parent)
 
     ui->listWidget->setSelectionMode(QAbstractItemView::MultiSelection);
 
-    auto action = new QAction{"Dummy Plot", this};
-    action->setShortcut(QKeySequence{Qt::CTRL | Qt::Key_D});
-    addAction(action);
-    connect(action, &QAction::triggered, this, [this]{
-        auto chartView = new QChartView(createSigLogChart(thefilename));
-        ui->horizontalLayout->addWidget(chartView, 1);
-    });
-
-    //QString thefilename;
 
 
 }
@@ -79,12 +66,12 @@ void Widget::on_openFile_clicked()
     this->setWindowTitle(thefilename);
     silLogData.close();
 
-    sigData = getNicksData(thefilename);
+    //sigData = getNicksData(thefilename);
 
 }
 
 
-QMap<QString, QLineSeries *> Widget::getNicksData(QString &fileName) const
+QMap<QString, QVector<QCPGraphData>> Widget::getNicksData(QString &fileName) const
 {
     /*Read Each line
      *
@@ -96,10 +83,11 @@ QMap<QString, QLineSeries *> Widget::getNicksData(QString &fileName) const
      *
      *  if Step graph check add and Extra data point in
      */
+
     bool dataStart = false;
     QFile data(fileName);
     QString line = NULL;
-    QMap<QString, QLineSeries *> wantedData;
+    QMap<QString, QVector<QCPGraphData>> wantedData;
 
     if (!data.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "No File Found";
@@ -125,19 +113,22 @@ QMap<QString, QLineSeries *> Widget::getNicksData(QString &fileName) const
 
         QList<QString> sensorLineData = line.split(" ");
         QString sensor_id  = sensorLineData[1];
-        qreal value = sensorLineData[2].toDouble();
+        double value = sensorLineData[2].toDouble();
         QDateTime time = QDateTime::fromString(sensorLineData[0], "HHmmss.zzz");
-
+        QCPGraphData mynewdata;
 
         if (!wantedData.contains(sensor_id)) {
-            QLineSeries *data = new QLineSeries();
-
-            data->append(time.toMSecsSinceEpoch(), value);
-            wantedData.insert(sensor_id, data);
+            mynewdata.key = static_cast<double>(time.toSecsSinceEpoch());
+            mynewdata.value = value;
+            QVector<QCPGraphData> dataStore;
+            dataStore.push_back(mynewdata);
+            wantedData.insert(sensor_id, dataStore);
         } else {
-            wantedData[sensor_id]->append(time.toMSecsSinceEpoch(), value);
-
+            mynewdata.key = static_cast<double>(time.toSecsSinceEpoch());
+            mynewdata.value = value;
+            wantedData[sensor_id].append(mynewdata);
         }
+
     }
 
     data.close();
@@ -148,46 +139,39 @@ QMap<QString, QLineSeries *> Widget::getNicksData(QString &fileName) const
 }
 
 
-QChart *Widget::createSigLogChart(QString &filename) const
+QCustomPlot *Widget::createSigLogChart(QString &filename) const
 {
-    QChart *chart = new QChart();
-    //QMap<QString, QLineSeries *> test = getNicksData(filename);
-
     qDebug() << filename;
+    // For Testing sensor 1 always picked
+    QMap<QString, QVector<QCPGraphData>> myData = getNicksData(filename);
 
-    QDateTimeAxis* axisX = new QDateTimeAxis;
-    axisX->setTickCount(30);
-    axisX->setFormat("HH:mm:ss");
-    axisX->setTitleText("Time");
-    qDebug() << "differnet Data Sensors " << sigData.count();
+    QVector<QCPGraphData> sensorOne = myData["01"];
 
-    for (QListWidgetItem* sensor : ui->listWidget->selectedItems()) {
-        QString id = sensor->text().split(" ")[0];
+    qDebug() << myData.keys();
 
-        sigData[id]->setName(sensor->text());
-        chart->addSeries(sigData[id]);
+    QCustomPlot *test = new QCustomPlot();
+    QColor color(61,51,189);
+    test->addGraph();
+    test->graph(0)->data()->set(sensorOne);
+    test->graph(0)->setLineStyle(QCPGraph::lsLine);
+    test->graph(0)->setPen(QPen(color));
+    test->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 
-        QValueAxis* axisY = new QValueAxis;
-        if (ui->StepGraphCheckBox->isChecked()){
-            axisY->setLabelFormat("%d");
-            axisY->setTickCount(10);
+    QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
+    dateTicker->setDateTimeFormat("HHMM:ss");
+    test->xAxis->setTicker(dateTicker);
+    QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
+    textTicker->addTick(2, "Two");
+    textTicker->addTick(10, "Ten");
+    test->yAxis->setTicker(textTicker);
 
-        } else {
-            axisY->setLabelFormat("%4.3f");
-            axisY->setTickCount(10);
-        }
-        axisY->setTitleText("data");
+    test->yAxis->setRange(0, 300);
+    test->xAxis->setRange(-120, 10);
 
-        chart->addAxis(axisX, Qt::AlignBottom);
-        chart->addAxis(axisY, Qt::AlignLeft);
 
-        sigData[id]->attachAxis(axisX);
-        sigData[id]->attachAxis(axisY);
-    }
 
-    chart->setTitle("Graph of siglog");
 
-    return chart;
+    return test;
 
 }
 
@@ -196,7 +180,7 @@ QChart *Widget::createSigLogChart(QString &filename) const
 void Widget::on_makeGraph_clicked()
 {
     QMessageBox testbox;
-    koldorChartView *chartView;
+    QCustomPlot *nicksGraph = createSigLogChart(thefilename);
 
 
     if (ui->listWidget->count() == 0)
@@ -210,9 +194,9 @@ void Widget::on_makeGraph_clicked()
     {
         this->resize(800, 500);
         testbox.setText(ui->listWidget->currentItem()->text());
-        chartView = new koldorChartView(createSigLogChart(thefilename));
+
         //ui->horizontalLayout->addWidget(chartView, 1);
-        ui->GraphArea->addWidget(chartView, 1);
+        ui->GraphArea->addWidget(nicksGraph, 1);
     }
 }
 

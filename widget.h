@@ -1,12 +1,12 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
+#include "lib/qcustomplot.h"
+
 #include <QtWidgets/QWidget>
 #include <QMap>
-#include <QLineSeries>
 
-#include <QtCharts/QChartGlobal>
-#include <QtCharts/QLineSeries>
+
 
 
 QT_BEGIN_NAMESPACE
@@ -25,8 +25,8 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 
-    QChart *createSigLogChart(QString &filename) const;
-    QMap<QString, QLineSeries *> getNicksData(QString &fileName)const;
+    QCustomPlot *createSigLogChart(QString &filename) const;
+    QMap<QString, QVector<QCPGraphData>> getNicksData(QString &fileName)const;
 
 private slots:
     void on_openFile_clicked();
@@ -38,8 +38,6 @@ private slots:
 
 private:
     Ui::Widget *ui;
-
-    QMap<QString, QLineSeries *> sigData;
 
     QString thefilename;
 };

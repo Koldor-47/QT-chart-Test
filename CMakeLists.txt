@@ -58,7 +58,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(Nicks_QtChart PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(Nicks_QtChart PRIVATE Qt${QT_VERSION_MAJOR}::Widgets qcustomplot)
 target_link_libraries(Nicks_QtChart PRIVATE Qt${QT_VERSION_MAJOR}::Charts)
 
 set_target_properties(Nicks_QtChart PROPERTIES
