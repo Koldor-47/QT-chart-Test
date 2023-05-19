@@ -29,7 +29,6 @@ Widget::Widget(QWidget *parent)
     ui->listWidget->setSelectionMode(QAbstractItemView::MultiSelection);
 
 
-
 }
 
 Widget::~Widget()
@@ -89,6 +88,7 @@ QMap<QString, QVector<QCPGraphData>> Widget::getNicksData(QString &fileName) con
     QString line = NULL;
     QMap<QString, QVector<QCPGraphData>> wantedData;
 
+
     if (!data.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "No File Found";
     }
@@ -115,16 +115,18 @@ QMap<QString, QVector<QCPGraphData>> Widget::getNicksData(QString &fileName) con
         QString sensor_id  = sensorLineData[1];
         double value = sensorLineData[2].toDouble();
         QDateTime time = QDateTime::fromString(sensorLineData[0], "HHmmss.zzz");
+        time = time.addYears(80);
         QCPGraphData mynewdata;
-
+        qint64 sinceStartOfTime = time.toSecsSinceEpoch();
+        // Problem at the moment is that the date is 1900 in stead of  the date it was taken which is giving a Weird negative number.
         if (!wantedData.contains(sensor_id)) {
-            mynewdata.key = static_cast<double>(time.toSecsSinceEpoch());
+            mynewdata.key = static_cast<double>(sinceStartOfTime);
             mynewdata.value = value;
             QVector<QCPGraphData> dataStore;
             dataStore.push_back(mynewdata);
             wantedData.insert(sensor_id, dataStore);
         } else {
-            mynewdata.key = static_cast<double>(time.toSecsSinceEpoch());
+            mynewdata.key = static_cast<double>(sinceStartOfTime);
             mynewdata.value = value;
             wantedData[sensor_id].append(mynewdata);
         }
@@ -153,20 +155,20 @@ QCustomPlot *Widget::createSigLogChart(QString &filename) const
     QColor color(61,51,189);
     test->addGraph();
     test->graph(0)->data()->set(sensorOne);
-    test->graph(0)->setLineStyle(QCPGraph::lsLine);
+    test->graph(0)->setLineStyle(QCPGraph::lsStepLeft);
     test->graph(0)->setPen(QPen(color));
     test->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 
     QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
-    dateTicker->setDateTimeFormat("HHMM:ss");
+    dateTicker->setDateTimeFormat("HH:MM:ss:zzz");
     test->xAxis->setTicker(dateTicker);
     QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
-    textTicker->addTick(2, "Two");
-    textTicker->addTick(10, "Ten");
+    textTicker->addTick(1, "On");
+    textTicker->addTick(0, "Off");
     test->yAxis->setTicker(textTicker);
 
-    test->yAxis->setRange(0, 300);
-    test->xAxis->setRange(-120, 10);
+    test->yAxis->setRange(0, 1);
+    test->xAxis->setRange(sensorOne[0].key, sensorOne[(sensorOne.length()-1)].key);
 
 
 

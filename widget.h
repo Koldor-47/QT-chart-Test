@@ -38,7 +38,6 @@ private slots:
 
 private:
     Ui::Widget *ui;
-
     QString thefilename;
 };
 #endif // WIDGET_H
