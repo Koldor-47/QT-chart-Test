@@ -170,18 +170,24 @@ QCustomPlot *Widget::createSigLogChart(QString &filename) const
     test->graph(0)->data()->set(sensorOne);
     test->graph(0)->setLineStyle(QCPGraph::lsStepLeft);
     test->graph(0)->setPen(QPen(color));
+    test->graph(0)->setName("Nicks Graphing Tool");
     test->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 
     QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
     dateTicker->setDateTimeFormat("hh:mm:ss:zzz");
     dateTicker->setTickCount(15);
     test->xAxis->setTicker(dateTicker);
+
     QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
     textTicker->addTick(1, "On");
     textTicker->addTick(0, "Off");
     test->yAxis->setTicker(textTicker);
 
-    test->yAxis->setRange(minNumber, maxNumber);
+
+    test->axisRect()->setRangeZoomAxes(test->yAxis, test->xAxis);
+    test->axisRect()->setRangeZoomFactor(1, 1.5);
+
+    test->yAxis->setRange(minNumber - 0.01, maxNumber + 0.1);
     test->xAxis->setRange(sensorOne[0].key, sensorOne[(sensorOne.length()-1)].key);
 
 
