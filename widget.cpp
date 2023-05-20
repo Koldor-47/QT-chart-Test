@@ -151,6 +151,19 @@ QCustomPlot *Widget::createSigLogChart(QString &filename) const
 
     qDebug() << myData.keys();
 
+    double maxNumber = 1.0;
+    double minNumber = 0.0;
+
+    for (auto item : sensorOne){
+        if (item.value > maxNumber) {
+            maxNumber = item.value;
+        }
+
+        if (item.value < minNumber) {
+            minNumber = item.value;
+        }
+    }
+
     QCustomPlot *test = new QCustomPlot();
     QColor color(61,51,189);
     test->addGraph();
@@ -160,14 +173,15 @@ QCustomPlot *Widget::createSigLogChart(QString &filename) const
     test->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 
     QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
-    dateTicker->setDateTimeFormat("HH:MM:ss:zzz");
+    dateTicker->setDateTimeFormat("hh:mm:ss:zzz");
+    dateTicker->setTickCount(15);
     test->xAxis->setTicker(dateTicker);
     QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
     textTicker->addTick(1, "On");
     textTicker->addTick(0, "Off");
     test->yAxis->setTicker(textTicker);
 
-    test->yAxis->setRange(0, 1);
+    test->yAxis->setRange(minNumber, maxNumber);
     test->xAxis->setRange(sensorOne[0].key, sensorOne[(sensorOne.length()-1)].key);
 
 
