@@ -117,7 +117,7 @@ QMap<QString, QVector<QCPGraphData>> Widget::getNicksData(QString &fileName) con
         QDateTime time = QDateTime::fromString(sensorLineData[0], "HHmmss.zzz");
         time = time.addYears(80);
         QCPGraphData mynewdata;
-        qint64 sinceStartOfTime = time.toSecsSinceEpoch();
+        qint64 sinceStartOfTime = time.toMSecsSinceEpoch();
         // Problem at the moment is that the date is 1900 in stead of  the date it was taken which is giving a Weird negative number.
         if (!wantedData.contains(sensor_id)) {
             mynewdata.key = static_cast<double>(sinceStartOfTime);
@@ -154,7 +154,7 @@ QCustomPlot *Widget::createSigLogChart(QString &filename) const
     double maxNumber = 1.0;
     double minNumber = 0.0;
 
-    for (auto item : sensorOne){
+    for (QCPGraphData item : sensorOne){
         if (item.value > maxNumber) {
             maxNumber = item.value;
         }
@@ -168,7 +168,7 @@ QCustomPlot *Widget::createSigLogChart(QString &filename) const
     QColor color(61,51,189);
     test->addGraph();
     test->graph(0)->data()->set(sensorOne);
-    test->graph(0)->setLineStyle(QCPGraph::lsStepLeft);
+
     test->graph(0)->setPen(QPen(color));
     test->graph(0)->setName("Nicks Graphing Tool");
     test->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
@@ -178,12 +178,23 @@ QCustomPlot *Widget::createSigLogChart(QString &filename) const
     dateTicker->setTickCount(15);
     test->xAxis->setTicker(dateTicker);
 
+    /*
     QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
     textTicker->addTick(1, "On");
     textTicker->addTick(0, "Off");
     test->yAxis->setTicker(textTicker);
+    */
+
+    if (ui->StepGraphCheckBox->isChecked()){
+        test->graph(0)->setLineStyle(QCPGraph::lsStepLeft);
+    } else {
+        test->graph(0)->setLineStyle(QCPGraph::lsLine);
+    }
 
 
+    test->setMouseTracking(true);
+
+    test->replot();
     test->axisRect()->setRangeZoomAxes(test->yAxis, test->xAxis);
     test->axisRect()->setRangeZoomFactor(1, 1.5);
 
