@@ -29,8 +29,8 @@ set(PROJECT_SOURCES
         widget.cpp
         widget.h
         widget.ui
-        koldorchartview.h
-        koldorchartview.cpp
+        nickCustomWidget.h
+        nickCustomWidget.cpp
 )
 
 add_compile_options(-Wall -Wextra -Werror)

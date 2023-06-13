@@ -26,7 +26,7 @@ Widget::Widget(QWidget *parent)
     ui->setupUi(this);
     this->resize(300, 500);
 
-    ui->listWidget->setSelectionMode(QAbstractItemView::MultiSelection);
+    ui->listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
 
 }
@@ -35,6 +35,7 @@ Widget::~Widget()
 {
     delete ui;
 }
+
 
 void Widget::on_openFile_clicked()
 {
@@ -65,10 +66,23 @@ void Widget::on_openFile_clicked()
     this->setWindowTitle(thefilename);
     silLogData.close();
 
+
+    sortedData = getNicksData(thefilename);
+
     //sigData = getNicksData(thefilename);
 
 }
 
+double Widget::textTimeToSec(QStringView dataTime) const {
+    double hour = dataTime.sliced(0,2).toDouble();
+    double min = dataTime.sliced(2,2).toDouble();
+    double sec = dataTime.sliced(4,2).toDouble();
+    double mills = dataTime.sliced(7,3).toDouble() / 1000;
+
+    double totalTime = (((hour * 60) + min) * 60) + sec + mills;
+
+    return totalTime;
+}
 
 QMap<QString, QVector<QCPGraphData>> Widget::getNicksData(QString &fileName) const
 {
@@ -114,19 +128,17 @@ QMap<QString, QVector<QCPGraphData>> Widget::getNicksData(QString &fileName) con
         QList<QString> sensorLineData = line.split(" ");
         QString sensor_id  = sensorLineData[1];
         double value = sensorLineData[2].toDouble();
-        QDateTime time = QDateTime::fromString(sensorLineData[0], "HHmmss.zzz");
-        time = time.addYears(80);
+        double dateToSeconds = textTimeToSec(sensorLineData[0]);
         QCPGraphData mynewdata;
-        qint64 sinceStartOfTime = time.toMSecsSinceEpoch();
-        // Problem at the moment is that the date is 1900 in stead of  the date it was taken which is giving a Weird negative number.
+
         if (!wantedData.contains(sensor_id)) {
-            mynewdata.key = static_cast<double>(sinceStartOfTime);
+            mynewdata.key = dateToSeconds;
             mynewdata.value = value;
             QVector<QCPGraphData> dataStore;
             dataStore.push_back(mynewdata);
             wantedData.insert(sensor_id, dataStore);
         } else {
-            mynewdata.key = static_cast<double>(sinceStartOfTime);
+            mynewdata.key = dateToSeconds;
             mynewdata.value = value;
             wantedData[sensor_id].append(mynewdata);
         }
@@ -141,20 +153,18 @@ QMap<QString, QVector<QCPGraphData>> Widget::getNicksData(QString &fileName) con
 }
 
 
-QCustomPlot *Widget::createSigLogChart(QString &filename) const
+QCustomPlot *Widget::createSigLogChart() const
 {
-    qDebug() << filename;
-    // For Testing sensor 1 always picked
-    QMap<QString, QVector<QCPGraphData>> myData = getNicksData(filename);
+    QString chosenThingToLog = ui->listWidget->selectedItems()[0]->text().sliced(0, 2);
+    const QString GraphName = ui->listWidget->selectedItems()[0]->text();
 
-    QVector<QCPGraphData> sensorOne = myData["01"];
+    qDebug() << chosenThingToLog;
 
-    qDebug() << myData.keys();
-
+    QVector<QCPGraphData> dataSelected = sortedData[chosenThingToLog];
     double maxNumber = 1.0;
     double minNumber = 0.0;
 
-    for (QCPGraphData item : sensorOne){
+    for (QCPGraphData item : dataSelected){
         if (item.value > maxNumber) {
             maxNumber = item.value;
         }
@@ -167,23 +177,16 @@ QCustomPlot *Widget::createSigLogChart(QString &filename) const
     QCustomPlot *test = new QCustomPlot();
     QColor color(61,51,189);
     test->addGraph();
-    test->graph(0)->data()->set(sensorOne);
+    test->graph(0)->data()->set(dataSelected);
 
     test->graph(0)->setPen(QPen(color));
     test->graph(0)->setName("Nicks Graphing Tool");
-    test->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    test->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
 
-    QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
-    dateTicker->setDateTimeFormat("hh:mm:ss:zzz");
+    QSharedPointer<QCPAxisTickerTime> dateTicker(new QCPAxisTickerTime);
+    dateTicker->setTimeFormat("%h:%m:%s.%z");
     dateTicker->setTickCount(15);
     test->xAxis->setTicker(dateTicker);
-
-    /*
-    QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
-    textTicker->addTick(1, "On");
-    textTicker->addTick(0, "Off");
-    test->yAxis->setTicker(textTicker);
-    */
 
     if (ui->StepGraphCheckBox->isChecked()){
         test->graph(0)->setLineStyle(QCPGraph::lsStepLeft);
@@ -191,18 +194,19 @@ QCustomPlot *Widget::createSigLogChart(QString &filename) const
         test->graph(0)->setLineStyle(QCPGraph::lsLine);
     }
 
-
     test->setMouseTracking(true);
 
     test->replot();
     test->axisRect()->setRangeZoomAxes(test->yAxis, test->xAxis);
     test->axisRect()->setRangeZoomFactor(1, 1.5);
 
-    test->yAxis->setRange(minNumber - 0.01, maxNumber + 0.1);
-    test->xAxis->setRange(sensorOne[0].key, sensorOne[(sensorOne.length()-1)].key);
+    test->yAxis->setRange(minNumber - 0.01, maxNumber + 0.25);
+    test->xAxis->setRange(dataSelected[0].key, dataSelected[(dataSelected.length()-1)].key);
 
-
-
+    test->legend->setVisible(true);
+    QFont legendFont = font();
+    legendFont.setPointSize(9);
+    test->graph(0)->setName(GraphName);
 
     return test;
 
@@ -213,7 +217,7 @@ QCustomPlot *Widget::createSigLogChart(QString &filename) const
 void Widget::on_makeGraph_clicked()
 {
     QMessageBox testbox;
-    QCustomPlot *nicksGraph = createSigLogChart(thefilename);
+    QCustomPlot *nicksGraph = createSigLogChart();
 
 
     if (ui->listWidget->count() == 0)

@@ -25,7 +25,7 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 
-    QCustomPlot *createSigLogChart(QString &filename) const;
+    QCustomPlot *createSigLogChart() const;
     QMap<QString, QVector<QCPGraphData>> getNicksData(QString &fileName)const;
 
 private slots:
@@ -39,5 +39,7 @@ private slots:
 private:
     Ui::Widget *ui;
     QString thefilename;
+    double textTimeToSec(QStringView dataTime) const;
+    QMap<QString, QVector<QCPGraphData>> sortedData;
 };
 #endif // WIDGET_H
